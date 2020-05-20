@@ -10,6 +10,8 @@ class CPU:
         self.pc = 0
         self.reg = [0] * 8
         self.ram = [0] * 256
+        self.sp = 7
+        self.reg[self.sp] = 0xF4
 
 
     def load(self):
@@ -35,7 +37,8 @@ class CPU:
                 if string_val == "":
                     continue
                 v = int(string_val, 2)
-                self.ram[address] = v
+                # self.ram[address] = v
+                self.ram_write(address, v)
                 address += 1
         # for instruction in program:
         #     self.ram[address] = instruction
@@ -53,10 +56,10 @@ class CPU:
             raise Exception("Unsupported ALU operation")
 
     def ram_read(self, mar):
-        return self.reg[mar]
+        return self.ram[mar]
 
     def ram_write(self, mar, mdr):
-        self.reg[mar] = mdr
+        self.ram[mar] = mdr
 
     def trace(self):
         """
@@ -83,11 +86,14 @@ class CPU:
         halt = False
         while not halt:
             instruction = self.ram[self.pc]
+            opr_a = self.ram_read(self.pc + 1)
+            opr_b = self.ram_read(self.pc + 2)
             if instruction == 0b10000010:
-                output = self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
+                # output = self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.reg[opr_a] = opr_b
                 self.pc += 3
             elif instruction == 0b01000111:
-                output = self.ram_read(self.ram[self.pc + 1])
+                output = self.reg[opr_a]
                 print(output)
                 self.pc += 2
             elif instruction == 0b10100010:
@@ -95,6 +101,20 @@ class CPU:
                 reg_b = self.ram[self.pc + 2]
                 self.alu('MUL', reg_a, reg_b)
                 self.pc += 3
+            elif instruction == 0b01000101:
+                self.reg[self.sp] -= 1
+                reg_num = opr_a
+                val = self.reg[reg_num]
+                top_stack = self.reg[self.sp]
+                self.ram[top_stack] = val
+                self.pc += 2
+            elif instruction == 0b01000110:
+                top_stack = self.reg[self.sp]
+                val = self.ram[top_stack]
+                reg_num = opr_a
+                self.reg[reg_num] = val
+                self.reg[self.sp] += 1
+                self.pc += 2
             elif instruction == 0b00000001:
                 halt = True
             else:
