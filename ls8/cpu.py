@@ -96,6 +96,11 @@ class CPU:
                 output = self.reg[opr_a]
                 print(output)
                 self.pc += 2
+            elif instruction == 0b10100000:
+                reg_a = self.ram[self.pc + 1]
+                reg_b = self.ram[self.pc + 2]
+                self.alu('ADD', reg_a, reg_b)
+                self.pc += 3
             elif instruction == 0b10100010:
                 reg_a = self.ram[self.pc + 1]
                 reg_b = self.ram[self.pc + 2]
@@ -115,6 +120,19 @@ class CPU:
                 self.reg[reg_num] = val
                 self.reg[self.sp] += 1
                 self.pc += 2
+            elif instruction == 0b01010000:
+                return_addr = self.pc + 2
+                self.reg[self.sp] -= 1
+                top_stack = self.reg[self.sp]
+                self.ram[top_stack] = return_addr
+                reg_num = opr_a
+                subroutine_addr = self.reg[reg_num]
+                self.pc = subroutine_addr
+            elif instruction == 0b00010001:
+                top_stack = self.reg[self.sp]
+                return_addr = self.ram[top_stack]
+                self.reg[self.sp] += 1
+                self.pc = return_addr 
             elif instruction == 0b00000001:
                 halt = True
             else:
